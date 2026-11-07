@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<title>YMusic — конфиг</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 14px;
+    font: 13px "Segoe UI", sans-serif;
+    background: #F3F3F3; color: #1A1A1A;
+  }
+  textarea {
+    flex: 1;
+    width: 100%;
+    padding: 10px 12px;
+    resize: none;
+    border: 1px solid #BDBDBD; border-radius: 4px;
+    font: 13px/1.55 "Cascadia Mono", Consolas, monospace;
+    background: #fff; color: #1A1A1A;
+    tab-size: 2;
+  }
+  textarea:focus { outline: 2px solid #3A6EA5; outline-offset: -1px; border-color: transparent; }
+  .errors { margin: 0; padding: 8px 12px 8px 28px; background: #FDECEA; color: #8A1C11; border-radius: 4px; }
+  .errors:empty { display: none; }
+  .bar { display: flex; align-items: center; gap: 8px; }
+  .status { flex: 1; color: #2E6B34; }
+  button {
+    min-width: 96px; padding: 6px 14px;
+    font: inherit; border-radius: 4px; cursor: pointer;
+    border: 1px solid #A0A0A0; background: #FDFDFD; color: #1A1A1A;
+  }
+  button.primary { background: #3A6EA5; border-color: #2F5A88; color: #fff; }
+  button:hover { filter: brightness(.96); }
+</style>
+</head>
+<body>
+  <textarea id="text" wrap="off" spellcheck="false" aria-label="Конфиг в формате JSON"></textarea>
+  <ul class="errors" id="errors"></ul>
+  <div class="bar">
+    <span class="status" id="status"></span>
+    <button class="primary" id="save">Сохранить</button>
+    <button id="close">Закрыть</button>
+  </div>
+<script src="config.js"></script>
+</body>
+</html>

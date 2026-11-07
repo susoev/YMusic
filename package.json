@@ -1,0 +1,62 @@
+{
+  "name": "ymusic",
+  "productName": "YMusic",
+  "version": "1.0.0",
+  "description": "Лёгкий плеер «Мне нравится» из Яндекс Музыки для Windows: офлайн-синхронизация, полоска поверх окон, трей",
+  "main": "src/main.js",
+  "author": "t.susoev",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64 --publish never",
+    "release": "electron-builder --win nsis --x64 --publish always"
+  },
+  "build": {
+    "appId": "in.alid.ymusic",
+    "productName": "YMusic",
+    "files": [
+      "src/**",
+      "assets/**",
+      "package.json"
+    ],
+    "win": {
+      "icon": "assets/icon.ico",
+      "signExecutable": false
+    },
+    "directories": {
+      "output": "dist"
+    },
+    "electronLanguages": [
+      "ru",
+      "en-US"
+    ],
+    "compression": "maximum",
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "YMusic",
+      "artifactName": "YMusic-Setup-${version}.exe"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "susoev",
+        "repo": "YMusic",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "devDependencies": {
+    "electron": "^45.1.0",
+    "electron-builder": "^26.18.0"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
+  },
+  "repository": "https://github.com/susoev/YMusic",
+  "homepage": "https://github.com/susoev/YMusic#readme",
+  "keywords": ["yandex-music", "яндекс-музыка", "music-player", "windows", "electron", "offline", "tray", "mini-player"]
+}

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; media-src file:">
+<title>YMusic</title>
+<link rel="stylesheet" href="bar.css">
+</head>
+<body>
+  <div class="wrap">
+    <section class="history" id="history" hidden>
+      <div class="history-head">Недавно играли</div>
+      <ol class="history-list" id="historyList"></ol>
+    </section>
+
+    <div class="bar" id="bar">
+      <div class="controls">
+        <button class="btn" id="prev" title="Предыдущий" aria-label="Предыдущий">
+          <svg viewBox="0 0 16 16"><path d="M4 3v10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M13 3.5v9L6 8z" fill="currentColor"/></svg>
+        </button>
+        <button class="btn main" id="play" title="Играть" aria-label="Играть">
+          <svg class="i-play" viewBox="0 0 16 16"><path d="M5 3.2v9.6L13 8z" fill="currentColor"/></svg>
+          <svg class="i-pause" viewBox="0 0 16 16"><path d="M5 3.5v9M11 3.5v9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        </button>
+        <button class="btn" id="next" title="Следующий" aria-label="Следующий">
+          <svg viewBox="0 0 16 16"><path d="M12 3v10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M3 3.5v9L10 8z" fill="currentColor"/></svg>
+        </button>
+        <button class="btn toggle" id="shuffle" title="Перемешать" aria-label="Перемешать" aria-pressed="false">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.5h2.5c1.6 0 2.6.8 3.5 2.2l1 1.6c.9 1.4 1.9 2.2 3.5 2.2H14"/><path d="M2 11.5h2.5c1.2 0 2-.4 2.7-1.2M9 5.7c.7-.8 1.5-1.2 2.5-1.2H14"/><path d="M12 2.5l2 2-2 2M12 9.5l2 2-2 2"/></svg>
+        </button>
+
+        <div class="spacer"></div>
+
+        <span class="dot" id="dot"></span>
+        <button class="btn" id="volume" title="Громкость — колесо мыши, клик — без звука" aria-label="Громкость">
+          <svg class="i-vol" viewBox="0 0 16 16"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z" fill="currentColor"/><path class="w1" d="M10.3 6.1a2.6 2.6 0 0 1 0 3.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path class="w2" d="M11.9 4.4a5 5 0 0 1 0 7.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path class="mute" d="M10.5 6l3.5 4M14 6l-3.5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </button>
+        <button class="btn toggle" id="list" title="Недавно играли" aria-label="Недавно играли" aria-pressed="false">
+          <svg viewBox="0 0 16 16"><path d="M3 4.5h10M3 8h10M3 11.5h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+        <button class="btn" id="hide" title="Свернуть в трей" aria-label="Свернуть в трей">
+          <svg viewBox="0 0 16 16"><path d="M3.5 11.5h9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <div class="info">
+        <span class="title" id="title">YMusic</span>
+        <span class="time" id="time"></span>
+      </div>
+      <div class="progress" id="progress"><div class="fill" id="fill"></div></div>
+    </div>
+  </div>
+  <audio id="audio" preload="auto"></audio>
+<script src="bar.js"></script>
+</body>
+</html>

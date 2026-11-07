@@ -1,0 +1,170 @@
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  font-family: var(--font);
+  font-size: var(--fs);
+  color: var(--ink);
+}
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100vh;
+  gap: 4px;
+  opacity: var(--op-idle);
+  transition: opacity .18s ease;
+}
+body:hover .wrap,
+body.pinned .wrap { opacity: 1; }
+
+/* ---------- Полоска ---------- */
+.bar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 34px;
+  padding: 0 6px;
+  -webkit-app-region: drag;
+}
+.spacer { flex: 1; }
+
+.btn {
+  -webkit-app-region: no-drag;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--edge);
+  cursor: pointer;
+}
+.btn svg { width: 15px; height: 15px; }
+.btn:hover { background: var(--hover); }
+.btn:focus-visible { outline: 2px solid var(--edge); outline-offset: 1px; }
+
+.btn.main {
+  width: 30px;
+  height: 26px;
+  background: var(--edge);
+  color: var(--bg);
+}
+.btn.main:hover { filter: brightness(1.12); background: var(--edge); }
+.btn.main .i-pause { display: none; }
+body.playing .btn.main .i-play { display: none; }
+body.playing .btn.main .i-pause { display: block; }
+
+.btn.toggle { opacity: .45; }
+.btn.toggle[aria-pressed="true"] { opacity: 1; background: var(--hover); }
+
+.i-vol .mute { display: none; }
+body.muted .i-vol .mute { display: block; }
+body.muted .i-vol .w1, body.muted .i-vol .w2 { display: none; }
+body.vol-low .i-vol .w2 { display: none; }
+
+.dot {
+  -webkit-app-region: no-drag;
+  width: 7px;
+  height: 7px;
+  margin: 0 5px;
+  border-radius: 50%;
+  border: 1.5px solid var(--edge);
+  opacity: .55;
+}
+.dot.ok { background: var(--edge); }
+.dot.syncing { animation: blink 1.2s ease-in-out infinite; }
+.dot.error, .dot.auth { border-color: var(--error); opacity: 1; }
+.dot.auth { background: var(--error); }
+@keyframes blink { 50% { opacity: .15; } }
+
+.info {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  height: 22px;
+  padding: 0 10px 0 11px;
+  line-height: 20px;
+  background: var(--panel);
+}
+.title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.title b { font-weight: 600; }
+.title .soft { color: var(--ink-soft); }
+.title.link { color: var(--edge); text-decoration: underline; cursor: pointer; }
+.time {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  font-size: .92em;
+}
+
+.progress {
+  position: relative;
+  height: 4px;
+  background: var(--rule);
+  cursor: pointer;
+}
+.progress::before { content: ""; position: absolute; left: 0; right: 0; top: -5px; bottom: -2px; }
+.fill {
+  height: 100%;
+  width: 0;
+  background: var(--edge);
+}
+
+/* ---------- Недавно играли ---------- */
+.history {
+  flex: 0 0 auto;
+  background: var(--bg);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.history[hidden] { display: none; }
+.history-head {
+  padding: 6px 11px 4px;
+  font-size: .85em;
+  letter-spacing: .02em;
+  color: var(--ink-soft);
+  -webkit-app-region: drag;
+}
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 4px;
+}
+.history-list li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  height: 24px;
+  line-height: 24px;
+  padding: 0 10px 0 11px;
+  cursor: pointer;
+}
+.history-list li:hover { background: var(--hover); }
+.history-list li.current { color: var(--edge); }
+.history-list .name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.history-list .dur { color: var(--ink-soft); font-variant-numeric: tabular-nums; font-size: .92em; }
+.history-list .empty { color: var(--ink-soft); cursor: default; }
+.history-list .empty:hover { background: none; }
