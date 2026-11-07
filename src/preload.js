@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('api', {
   save: (patch) => ipcRenderer.send('player:save', patch),
   started: (id) => ipcRenderer.send('player:started', id),
   broken: (id) => ipcRenderer.send('player:broken', id),
+  dislike: (id) => ipcRenderer.send('player:dislike', id),
   resize: (h) => ipcRenderer.send('resize', h),
   hide: () => ipcRenderer.send('hide'),
   login: () => ipcRenderer.send('login'),

@@ -80,6 +80,27 @@ module.exports = async ({ bar, openConfig, library, getConfigWin, app }) => {
   await library.sync();
   check('новые лайки докачались', fs.readdirSync(library.musicDir()).filter(f => f.endsWith('.mp3')).length === 5);
 
+  // Дизлайк с отменой: трек не уходит в Яндекс.
+  const d0 = (await state()).title;
+  await js(`document.getElementById('dislike').click()`);
+  await wait(300);
+  const d1 = await state();
+  check('дизлайк: пропуск и «Отменить»', d1.title.startsWith('Убрано') && d1.title.includes('Отменить'), d1.title);
+  await shot('8-dislike');
+  await js(`document.querySelector('#title .undo').click()`);
+  await wait(5500);
+  check('отмена вернула трек', (await state()).title.startsWith(d0.split(' · ')[0]), (await state()).title);
+  let st = await (await fetch(`${api}/__state`)).json();
+  check('отмена дизлайка ничего не отправила', st.disliked.length === 0 && st.liked.length === 5, JSON.stringify(st));
+  // Дизлайк всерьёз.
+  const victim = (await js(`[...document.querySelectorAll('#title b')].length`)) && d0;
+  await js(`document.getElementById('dislike').click()`);
+  await wait(6000);
+  st = await (await fetch(`${api}/__state`)).json();
+  const mp3s = fs.readdirSync(library.musicDir()).filter(f => f.endsWith('.mp3'));
+  check('дизлайк ушёл в Яндекс и снят лайк', st.disliked.length === 1 && st.liked.length === 4, JSON.stringify(st) + ' ' + victim);
+  check('файл дизлайкнутого удалён', mp3s.length === 4, mp3s.join(' | '));
+
   await js(`document.getElementById('shuffle').click()`);
   await wait(200);
   check('shuffle выключается', (await js(`document.getElementById('shuffle').getAttribute('aria-pressed')`)) === 'false');

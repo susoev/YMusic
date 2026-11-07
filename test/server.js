@@ -16,6 +16,7 @@ const catalog = files.map((f, i) => ({
 }));
 let liked = catalog.slice(0, Number(process.env.LIKED || catalog.length)).map(t => t.id);
 let revision = 1;
+const disliked = [];
 
 const json = (res, code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
 
@@ -31,6 +32,7 @@ http.createServer((req, res) => {
     // Управление тестом: какие треки «лайкнуты».
     if (u.pathname === '/__liked') { liked = u.searchParams.get('ids').split(',').filter(Boolean); revision++; return json(res, 200, { liked }); }
 
+    if (u.pathname === '/__state') return json(res, 200, { liked, disliked });
     const m3 = u.pathname.match(/^\/get-mp3\/([0-9a-f]{32})\/(\d+)(\/x\/(\d+)\.mp3)$/);
     if (m3) {
       const t = catalog.find(c => c.id === m3[4]);
@@ -52,6 +54,11 @@ http.createServer((req, res) => {
       return json(res, 200, { result: { library: { uid: 42, revision, tracks: liked.map(id => {
         const t = catalog.find(c => c.id === id); return { id: t.id, albumId: t.albumId, timestamp: new Date().toISOString() };
       }) } } });
+    }
+    if (u.pathname === '/users/42/dislikes/tracks/add-multiple') { disliked.push(...new URLSearchParams(body).getAll('track-ids')); return json(res, 200, { result: { revision: ++revision } }); }
+    if (u.pathname === '/users/42/likes/tracks/remove') {
+      const rm = new URLSearchParams(body).getAll('track-ids').map(x => x.split(':')[0]);
+      liked = liked.filter(id => !rm.includes(id)); return json(res, 200, { result: { revision: ++revision } });
     }
     if (u.pathname === '/tracks' && req.method === 'POST') {
       const ids = new URLSearchParams(body).getAll('track-ids');

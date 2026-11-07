@@ -88,6 +88,12 @@ class YandexMusic {
     return { revision: lib.revision || 0, tracks: list };
   }
 
+  // Дизлайк: трек уходит в «Не нравится» и снимается с «Мне нравится».
+  async dislike(trackId) {
+    await this.request('POST', `/users/${this.uid}/dislikes/tracks/add-multiple`, { form: { 'track-ids': [trackId] } });
+    await this.request('POST', `/users/${this.uid}/likes/tracks/remove`, { form: { 'track-ids': [trackId] } });
+  }
+
   // Полные данные треков пачками по 100.
   async tracks(ids) {
     const out = [];

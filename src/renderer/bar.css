@@ -113,6 +113,7 @@ body.vol-low .i-vol .w2 { display: none; }
 .title b { font-weight: 600; }
 .title .soft { color: var(--ink-soft); }
 .title.link { color: var(--edge); text-decoration: underline; cursor: pointer; }
+.title .undo { color: var(--edge); text-decoration: underline; cursor: pointer; margin-left: 6px; }
 .time {
   flex: 0 0 auto;
   font-variant-numeric: tabular-nums;

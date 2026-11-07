@@ -29,7 +29,7 @@ class Library {
     this.onAuthError = onAuthError;
     this.log = log || (() => {});
     const d = readJson(this.file, {});
-    this.data = { uid: d.uid || null, revision: d.revision || 0, order: d.order || [], tracks: d.tracks || {}, trash: d.trash || [] };
+    this.data = { uid: d.uid || null, revision: d.revision || 0, order: d.order || [], tracks: d.tracks || {}, trash: d.trash || [], dislikes: d.dislikes || [] };
     this.status = { state: 'idle', total: 0, ready: 0, queue: 0, at: null, error: null, login: null };
     this.running = false;
     this.again = false;
@@ -114,6 +114,7 @@ class Library {
       this.data.uid = api.uid;
 
       this.emptyTrash();
+      await this.sendDislikes(api);
       const liked = await api.likedTracks();
       const ids = liked.tracks.map(t => t.id);
       const keep = new Set(ids);
@@ -164,6 +165,26 @@ class Library {
       } else {
         this.setStatus({ state: 'error', error: e.message || String(e), at: this.status.at });
       }
+    }
+  }
+
+  // Дизлайк из плеера: убираем трек сразу, в Яндекс отправляем при синхронизации
+  // (если сети нет — повторим позже, до этого трек не вернётся из «Мне нравится»).
+  dislike(id) {
+    this.data.dislikes = [...new Set([...(this.data.dislikes || []), id])];
+    this.removeTrack(id);
+    this.data.order = this.data.order.filter(x => x !== id);
+    this.save();
+    this.onChange(this.playable());
+    this.sync();
+  }
+
+  async sendDislikes(api) {
+    for (const id of [...(this.data.dislikes || [])]) {
+      await api.dislike(id);
+      this.log('disliked', id);
+      this.data.dislikes = this.data.dislikes.filter(x => x !== id);
+      this.save();
     }
   }
 

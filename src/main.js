@@ -336,6 +336,7 @@ ipcMain.on('player:save', (_e, patch) => {
 // Новый трек начался — удобный момент поставить обновление.
 ipcMain.on('player:started', () => { if (updateReady) installUpdate(true); });
 ipcMain.on('player:broken', (_e, id) => library.broken(id));
+ipcMain.on('player:dislike', (_e, id) => library.dislike(id));
 
 // Высота меняется, когда раскрывается список; нижний край остаётся на месте.
 ipcMain.on('resize', (_e, height) => {

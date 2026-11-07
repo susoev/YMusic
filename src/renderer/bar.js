@@ -16,6 +16,8 @@ let status = {};
 let wantPlay = false;       // при старте: играть ли, когда появится первый трек
 let flash = null;           // временная надпись (громкость)
 let flashTimer = null;
+let flashAction = null;     // { label, run } — ссылка в надписи (например «Отменить»)
+let pendingDislike = null;  // { id, timer } — 5 секунд на отмену
 let lastSavedTime = 0;
 
 // ---------- Цвета из одного hex (как в Sticker) ----------
@@ -86,9 +88,12 @@ function shuffled(ids) {
   return a;
 }
 
+// Треки для очереди: всё скачанное, кроме ждущего отправки дизлайка.
+const queueIds = () => tracks.map(t => t.id).filter(id => !pendingDislike || id !== pendingDislike.id);
+
 // Перестроить очередь, сохранив текущий трек на своём месте.
 function rebuildOrder() {
-  const ids = tracks.map(t => t.id);
+  const ids = queueIds();
   if (shuffle) {
     order = shuffled(ids.filter(id => id !== current));
     if (current && byId.has(current)) order.unshift(current);
@@ -106,7 +111,7 @@ function mergeTracks(list) {
   if (!shuffle || order.length === 0) { rebuildOrder(); return; }
   order = order.filter(id => byId.has(id));
   for (const t of list) {
-    if (old.has(t.id)) continue;
+    if (old.has(t.id) || (pendingDislike && pendingDislike.id === t.id)) continue;
     const from = Math.max(pos + 1, 0);
     const at = from + Math.floor(Math.random() * (order.length - from + 1));
     order.splice(at, 0, t.id);
@@ -157,7 +162,7 @@ function step(dir) {
   if (i >= order.length) {
     // Круг пройден: в режиме shuffle перемешиваем заново (без повтора только что сыгранного).
     if (shuffle) {
-      order = shuffled(tracks.map(t => t.id));
+      order = shuffled(queueIds());
       if (order[0] === current && order.length > 1) order.push(order.shift());
     }
     i = 0;
@@ -187,6 +192,13 @@ function renderInfo() {
   const t = current && byId.get(current);
   if (flash) {
     titleEl.textContent = flash;
+    if (flashAction) {
+      const a = document.createElement('span');
+      a.className = 'undo';
+      a.textContent = flashAction.label;
+      a.onclick = (e) => { e.stopPropagation(); const run = flashAction.run; clearFlash(); run(); };
+      titleEl.append(a);
+    }
   } else if (t) {
     titleEl.innerHTML = `<b>${esc(t.artists)}</b> — ${esc(t.title)}${t.album ? ` <span class="soft">· ${esc(t.album)}</span>` : ''}`;
     titleEl.title = `${t.artists} — ${t.title}${t.album ? `\nАльбом: ${t.album}` : ''}`;
@@ -282,12 +294,54 @@ function renderVolume() {
   document.body.classList.toggle('vol-low', audio.volume < 0.5);
   $('volume').title = `Громкость ${audio.muted ? 'выкл.' : Math.round(audio.volume * 100) + '%'} — колесо мыши, клик — без звука`;
 }
-function showFlash(text) {
+function showFlash(text, action = null, ms = 1200) {
   flash = text;
+  flashAction = action;
   renderInfo();
   clearTimeout(flashTimer);
-  flashTimer = setTimeout(() => { flash = null; renderInfo(); }, 1200);
+  flashTimer = setTimeout(clearFlash, ms);
 }
+function clearFlash() {
+  clearTimeout(flashTimer);
+  flash = null;
+  flashAction = null;
+  renderInfo();
+}
+
+// ---------- Дизлайк ----------
+// Трек сразу пропускается; в Яндекс уходит через 5 секунд, если не нажали «Отменить».
+function dislike() {
+  if (!current) return;
+  commitDislike();
+  const id = current;
+  const time = audio.currentTime;
+  step(1);
+  order = order.filter(x => x !== id);
+  pos = current ? order.indexOf(current) : -1;
+  pendingDislike = { id, time, timer: setTimeout(commitDislike, 5000) };
+  showFlash(`Убрано из «Мне нравится»`, { label: "Отменить", run: undoDislike }, 5000);
+}
+function commitDislike() {
+  if (!pendingDislike) return;
+  clearTimeout(pendingDislike.timer);
+  const { id } = pendingDislike;
+  pendingDislike = null;
+  history = history.filter(x => x !== id);
+  window.api.save({ history });
+  window.api.dislike(id);
+}
+function undoDislike() {
+  if (!pendingDislike) return;
+  clearTimeout(pendingDislike.timer);
+  const { id, time } = pendingDislike;
+  pendingDislike = null;
+  if (!byId.has(id)) return;
+  // Возвращаемся к треку с того же места, следующим пойдёт тот, что начался после дизлайка.
+  if (!order.includes(id)) order.splice(Math.max(pos, 0), 0, id);
+  load(id, { time });
+  showFlash('Вернул');
+}
+window.addEventListener('beforeunload', commitDislike);
 
 $('volume').addEventListener('wheel', (e) => {
   e.preventDefault();
@@ -303,6 +357,7 @@ $('volume').addEventListener('click', () => {
 $('play').addEventListener('click', togglePlay);
 $('next').addEventListener('click', () => step(1));
 $('prev').addEventListener('click', () => step(-1));
+$('dislike').addEventListener('click', dislike);
 $('shuffle').addEventListener('click', () => { setShuffle(!shuffle); showFlash(shuffle ? 'Перемешивание включено' : 'Подряд, как в «Мне нравится»'); });
 $('list').addEventListener('click', () => setHistoryOpen($('history').hidden));
 $('hide').addEventListener('click', () => window.api.hide());
