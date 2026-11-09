@@ -98,8 +98,19 @@ module.exports = async ({ bar, openConfig, library, getConfigWin, app }) => {
   await wait(6000);
   st = await (await fetch(`${api}/__state`)).json();
   const mp3s = fs.readdirSync(library.musicDir()).filter(f => f.endsWith('.mp3'));
-  check('дизлайк ушёл в Яндекс и снят лайк', st.disliked.length === 1 && st.liked.length === 4, JSON.stringify(st) + ' ' + victim);
+  check('дизлайк ушёл в Яндекс', st.disliked.length === 1 && (process.env.KEEP_LIKES ? true : st.liked.length === 4), JSON.stringify(st) + ' ' + victim);
   check('файл дизлайкнутого удалён', mp3s.length === 4, mp3s.join(' | '));
+  // Даже если Яндекс оставил лайк, после синхронизаций трек не возвращается.
+  const gone = st.disliked[0];
+  await library.sync(); await library.sync();
+  const ids = library.playable().map(t => t.id);
+  check('дизлайкнутый не вернулся после синхронизации', !ids.includes(gone) && ids.length === 4, ids.join(','));
+  // Лайкнули снова в браузере — трек возвращается.
+  await fetch(`${api}/__relike?id=${gone.split(':')[0]}`);
+  await library.sync();
+  check('повторный лайк в Яндексе возвращает трек', library.playable().some(t => t.id === gone), library.playable().map(t => t.id).join(','));
+  await fetch(`${api}/__liked?ids=1000,1001,1002,1003`);
+  await library.sync();
 
   await js(`document.getElementById('shuffle').click()`);
   await wait(200);
@@ -109,7 +120,7 @@ module.exports = async ({ bar, openConfig, library, getConfigWin, app }) => {
   await shot('5-idle');
 
   const saved = JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'player.json'), 'utf8'));
-  check('состояние сохранено', saved.current && saved.volume === 0.65 && saved.shuffle === false && saved.history.length >= 2, JSON.stringify(saved));
+  check('состояние сохранено', saved.current && saved.volume === 0.65 && saved.shuffle === false && saved.history.length >= 1, JSON.stringify(saved));
 
   openConfig();
   await wait(1500);

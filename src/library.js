@@ -29,7 +29,7 @@ class Library {
     this.onAuthError = onAuthError;
     this.log = log || (() => {});
     const d = readJson(this.file, {});
-    this.data = { uid: d.uid || null, revision: d.revision || 0, order: d.order || [], tracks: d.tracks || {}, trash: d.trash || [], dislikes: d.dislikes || [] };
+    this.data = { uid: d.uid || null, revision: d.revision || 0, order: d.order || [], tracks: d.tracks || {}, trash: d.trash || [], dislikes: d.dislikes || [], blocked: d.blocked || {} };
     this.status = { state: 'idle', total: 0, ready: 0, queue: 0, at: null, error: null, login: null };
     this.running = false;
     this.again = false;
@@ -116,7 +116,7 @@ class Library {
       this.emptyTrash();
       await this.sendDislikes(api);
       const liked = await api.likedTracks();
-      const ids = liked.tracks.map(t => t.id);
+      const ids = this.filterBlocked(liked.tracks, await api.dislikedTracks().catch((e) => { this.log('dislikes list', e); return []; }));
       const keep = new Set(ids);
       let changed = false;
 
@@ -168,9 +168,10 @@ class Library {
     }
   }
 
-  // Дизлайк из плеера: убираем трек сразу, в Яндекс отправляем при синхронизации
-  // (если сети нет — повторим позже, до этого трек не вернётся из «Мне нравится»).
+  // Дизлайк из плеера: трек сразу попадает в локальный стоп-лист (blocked) и больше не играет,
+  // даже если Яндекс не снимет лайк. В Яндекс отправляем при синхронизации (без сети — позже).
   dislike(id) {
+    this.data.blocked[String(id).split(':')[0]] = Date.now();
     this.data.dislikes = [...new Set([...(this.data.dislikes || []), id])];
     this.removeTrack(id);
     this.data.order = this.data.order.filter(x => x !== id);
@@ -179,10 +180,32 @@ class Library {
     this.sync();
   }
 
+  // Стоп-лист = свои дизлайки + «Не рекомендовать» из Яндекса.
+  // Трек снова играет, только если его лайкнули ПОСЛЕ дизлайка (например, в браузере).
+  filterBlocked(likes, yandexDislikes) {
+    const blocked = this.data.blocked;
+    for (const d of yandexDislikes) blocked[d.num] = Math.max(blocked[d.num] || 0, d.ts || 1);
+    const out = [];
+    for (const t of likes) {
+      const num = t.id.split(':')[0];
+      const at = blocked[num];
+      if (!at) { out.push(t.id); continue; }
+      if (t.ts && t.ts > at + 60 * 1000) {
+        this.log('unblocked (liked again)', t.id);
+        delete blocked[num];
+        out.push(t.id);
+      }
+    }
+    // Записи, которых нет ни в лайках, ни в дизлайках Яндекса, больше не нужны.
+    const alive = new Set([...likes.map(t => t.id.split(':')[0]), ...yandexDislikes.map(d => d.num), ...(this.data.dislikes || []).map(x => String(x).split(':')[0])]);
+    for (const num of Object.keys(blocked)) if (!alive.has(num)) delete blocked[num];
+    return out;
+  }
+
   async sendDislikes(api) {
     for (const id of [...(this.data.dislikes || [])]) {
-      await api.dislike(id);
-      this.log('disliked', id);
+      const r = await api.dislike(id);
+      this.log('disliked', id, JSON.stringify(r));
       this.data.dislikes = this.data.dislikes.filter(x => x !== id);
       this.save();
     }

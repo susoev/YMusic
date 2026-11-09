@@ -88,10 +88,20 @@ class YandexMusic {
     return { revision: lib.revision || 0, tracks: list };
   }
 
-  // Дизлайк: трек уходит в «Не нравится» и снимается с «Мне нравится».
+  // Дизлайк: трек уходит в «Не рекомендовать» и снимается с «Мне нравится».
+  // Лайк снимаем по номеру трека (без альбома) — так он записан в списке лайков.
   async dislike(trackId) {
-    await this.request('POST', `/users/${this.uid}/dislikes/tracks/add-multiple`, { form: { 'track-ids': [trackId] } });
-    await this.request('POST', `/users/${this.uid}/likes/tracks/remove`, { form: { 'track-ids': [trackId] } });
+    const num = String(trackId).split(':')[0];
+    const a = await this.request('POST', `/users/${this.uid}/dislikes/tracks/add-multiple`, { form: { 'track-ids': [trackId] } });
+    const b = await this.request('POST', `/users/${this.uid}/likes/tracks/remove`, { form: { 'track-ids': [num] } });
+    return { dislike: a, unlike: b };
+  }
+
+  // Треки с отметкой «Не рекомендовать»: [{ num, ts }].
+  async dislikedTracks() {
+    const r = await this.request('GET', `/users/${this.uid}/dislikes/tracks`, { params: { 'if-modified-since-revision': 0 } });
+    const lib = (r && r.library) || {};
+    return (lib.tracks || []).map(t => ({ num: String(t.id), ts: t.timestamp ? Date.parse(t.timestamp) || 0 : 0 }));
   }
 
   // Полные данные треков пачками по 100.
